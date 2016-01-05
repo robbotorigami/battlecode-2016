@@ -3,16 +3,20 @@ package team022;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
+import java.math.*;
 
 import battlecode.common.*;
 
 public abstract class BaseRobot {
 	public RobotController rc;
 	public Random rand; //Random number generator
+	public Direction[] directionValues;
 	
 	public BaseRobot(RobotController rcin){
 		rc = rcin;
 		rand = new Random(rc.getID());
+		directionValues = new Direction[]{Direction.NORTH, Direction.NORTH_EAST, Direction.EAST, Direction.SOUTH_EAST,
+                Direction.SOUTH, Direction.SOUTH_WEST, Direction.WEST, Direction.NORTH_WEST};
 		
 	}
 
@@ -39,17 +43,27 @@ public abstract class BaseRobot {
 	}
 	
 	//Move as close as possible to the provided direction
-	public boolean moveAsCloseToDirection(Direction toMove) throws GameActionException{
+	public boolean moveAsCloseToDirection(Direction toMove, boolean allowBackwards) throws GameActionException{
 		if(rc.isCoreReady()){
-			Direction[] toTry = {toMove,
-					toMove.rotateLeft(),
-					toMove.rotateRight(),
-					toMove.rotateLeft().rotateLeft(),
-					toMove.rotateRight().rotateRight(),
-					toMove.rotateLeft().rotateLeft().rotateLeft(),
-					toMove.rotateRight().rotateRight().rotateRight(),
-					toMove.rotateLeft().rotateLeft().rotateLeft().rotateLeft()
-			};
+			Direction[] toTry;
+			if(allowBackwards){
+				toTry = new Direction[]{toMove,
+						toMove.rotateLeft(),
+						toMove.rotateRight(),
+						toMove.rotateLeft().rotateLeft(),
+						toMove.rotateRight().rotateRight(),
+						toMove.rotateLeft().rotateLeft().rotateLeft(),
+						toMove.rotateRight().rotateRight().rotateRight(),
+						toMove.rotateLeft().rotateLeft().rotateLeft().rotateLeft()
+				};
+			}else{
+				toTry = new Direction[]{toMove,
+						toMove.rotateLeft(),
+						toMove.rotateRight(),
+						toMove.rotateLeft().rotateLeft(),
+						toMove.rotateRight().rotateRight()
+				};
+			}
 			for(Direction dir:toTry){
 				if(rc.canMove(dir)&&rc.isCoreReady()){
 					rc.move(dir);
@@ -62,7 +76,161 @@ public abstract class BaseRobot {
 	
 	//Returns a random direction	
 	public Direction getRandomDirection(){
-		return Direction.values()[rand.nextInt(8)];
+		return directionValues[rand.nextInt(8)];
+	}
+	
+	/**
+	 * preliminary basic combat micro
+	 * @throws GameActionException 
+	 */
+	public void kiteingMicro() throws GameActionException{
+		if(rc.isCoreReady()){
+			DashAway(0.0);
+		}
+		if(rc.isWeaponReady()){
+			destroy();
+		}
+	}
+	
+	/**
+	 * Code for moving away from enemy robots
+	 */
+	public boolean DashAway(double bravado) throws GameActionException{
+		MapLocation[] adjacent = getAllAdjacent(rc.getLocation());
+		RobotInfo[] enemies = rc.senseNearbyRobots(1000, rc.getTeam().opponent());
+		RobotInfo[] zombles = rc.senseNearbyRobots(1000, Team.ZOMBIE);
+		
+		ArrayList<RobotInfo> danger = new ArrayList<RobotInfo>(Arrays.asList(enemies));
+		danger.addAll(Arrays.asList(zombles));
+		
+		//Have danger score for all adjacent squares, plus one for our square
+		
+		double[] dangerscore = new double[adjacent.length];
+		
+		for(RobotInfo badGuy : danger){
+			for(int i = 0; i < adjacent.length; i++){
+				if(badGuy.type.canAttack() && badGuy.type.attackRadiusSquared >= adjacent[i].distanceSquaredTo(badGuy.location)
+						&& badGuy.weaponDelay <= 1.0){
+					dangerscore[i] += badGuy.attackPower;
+				}
+			}
+		}
+
+		rc.setIndicatorString(0, "Danger = " + dangerscore[0]);
+		
+		if(dangerscore[0] > bravado){
+			double best = dangerscore[0];
+			MapLocation toMoveTo = null;
+			for(int i = 1; i < dangerscore.length; i++){
+				if(best > dangerscore[i] && rc.canMove(rc.getLocation().directionTo(adjacent[i]))){
+					best = dangerscore[i];
+					toMoveTo = adjacent[i];
+				}
+			}
+			if(toMoveTo != null){
+				if(rc.isCoreReady()){
+					rc.move(rc.getLocation().directionTo(toMoveTo));
+					return true;
+				}
+			}else{
+				//We aren't in open terrain! So, we're going to try and run away from the average
+				double vecx = 0;
+				double vecy = 0;
+				for(int i = 1; i < dangerscore.length; i++){
+					vecx += dangerscore[i] * dirToCos(directionValues[i-1]);
+					vecy += dangerscore[i] * dirToSin(directionValues[i-1]);
+				}
+				System.out.println(""+vecx+" "+vecy);
+				if(vecx != 0 || vecy != 0){
+					double angle = Math.atan2(vecy, vecx);
+					Direction desired = angleToDir(angle).opposite();
+					rc.setIndicatorString(0, "We want to go " + desired.toString());
+					return moveAsCloseToDirection(desired, false);
+				}
+			}
+		}
+		return false;
+	}
+	
+	/**
+	 * Given an angle, return the closest possible direction
+	 */
+	Direction angleToDir(double angle){
+		angle = Math.toDegrees(angle);
+		double[] angles = {90, 45, 0, 315, 270, 225, 180, 135};
+		double best = 10000;
+		int index = 0;
+		for(int i = 0; i < 8; i++){
+			if(Math.abs(angles[i] - angle) < best){
+				best = Math.abs(angles[i] - angle);
+				index = i;
+			}
+		}
+		return directionValues[index];
+	}
+	
+	/**
+	 * Converts given direction into cos of angle
+	 */
+	double dirToCos(Direction dir){
+		switch(dir){
+		case EAST:
+			return 1;
+		case NORTH_EAST:
+			return 1/Math.sqrt(2);
+		case NORTH:
+			return 0;
+		case NORTH_WEST:
+			return -1/Math.sqrt(2);
+		case WEST:
+			return -1;
+		case SOUTH_WEST:
+			return -1/Math.sqrt(2);
+		case SOUTH:
+			return 0;
+		case SOUTH_EAST:
+			return 1/Math.sqrt(2);
+		default:
+			return 0;
+		}
+	}
+	
+	/**
+	 * Converts given direction into sin of angle
+	 */
+	double dirToSin(Direction dir){
+		switch(dir){
+		case EAST:
+			return 0;
+		case NORTH_EAST:
+			return 1/Math.sqrt(2);
+		case NORTH:
+			return 1;
+		case NORTH_WEST:
+			return 1/Math.sqrt(2);
+		case WEST:
+			return 0;
+		case SOUTH_WEST:
+			return -1/Math.sqrt(2);
+		case SOUTH:
+			return -1;
+		case SOUTH_EAST:
+			return -1/Math.sqrt(2);
+		default:
+			return 0;
+		}
+	}
+	
+	/**
+	 * Gets all adjacent map squares. NOTE: the zero index is the square the robot is on
+	 */
+	public MapLocation[] getAllAdjacent(MapLocation center){
+		MapLocation[] adjacent = new MapLocation[9];
+		adjacent[0] = center;
+		for(int i = 0; i<directionValues.length; i++){
+			adjacent[i+1] = center.add(directionValues[i]);
+		}
+		return adjacent;
 	}
 	
 	/**
