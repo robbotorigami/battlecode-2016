@@ -1,5 +1,5 @@
 package team022;
-
+//now with 500% more Adam
 import battlecode.common.*;
 
 import java.util.Random;
