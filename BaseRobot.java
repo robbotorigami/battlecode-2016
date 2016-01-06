@@ -3,8 +3,6 @@ package team022;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
-import java.math.*;
-
 import battlecode.common.*;
 
 public abstract class BaseRobot {
@@ -93,6 +91,27 @@ public abstract class BaseRobot {
 	}
 	
 	/**
+	 * If there is more than numRobots in radSquared tiles, move away from them
+	 * Note: only uses robots from our team
+	 * @throws GameActionException 
+	 */
+	public void spreadOut(int numRobots, int radSquared) throws GameActionException{
+		RobotInfo[] ourBots = rc.senseNearbyRobots(radSquared, rc.getTeam());
+		rc.setIndicatorString(0, ourBots.length + " Nearby");
+		if(ourBots.length > numRobots){
+			int avgx = 0;
+			int avgy = 0;
+			for(RobotInfo bot : ourBots){
+				avgx += bot.location.x;
+				avgy += bot.location.y;
+			}
+			avgx /= ourBots.length;
+			avgy /= ourBots.length;
+			moveAsCloseToDirection(new MapLocation(avgx, avgy).directionTo(rc.getLocation()), false);
+		}
+	}
+	
+	/**
 	 * Code for moving away from enemy robots
 	 */
 	public boolean DashAway(double bravado) throws GameActionException{
@@ -116,7 +135,6 @@ public abstract class BaseRobot {
 			}
 		}
 
-		rc.setIndicatorString(0, "Danger = " + dangerscore[0]);
 		
 		if(dangerscore[0] > bravado){
 			double best = dangerscore[0];
@@ -144,7 +162,6 @@ public abstract class BaseRobot {
 				if(vecx != 0 || vecy != 0){
 					double angle = Math.atan2(vecy, vecx);
 					Direction desired = angleToDir(angle).opposite();
-					rc.setIndicatorString(0, "We want to go " + desired.toString());
 					return moveAsCloseToDirection(desired, false);
 				}
 			}
@@ -231,6 +248,28 @@ public abstract class BaseRobot {
 			adjacent[i+1] = center.add(directionValues[i]);
 		}
 		return adjacent;
+	}
+	
+	/**
+	 * Cleans off the most rubble heavy square in range
+	 * @throws GameActionException 
+	 */
+	public void springCleaning() throws GameActionException{
+		if(rc.isCoreReady()){
+			MapLocation[] squares = MapLocation.getAllMapLocationsWithinRadiusSq(rc.getLocation(), 2);
+			double mostRubble = 0;
+			MapLocation toClean = null;
+			for(MapLocation square : squares){
+				if(rc.senseRubble(square) > mostRubble){
+					mostRubble = rc.senseRubble(square);
+					toClean = square;
+				}
+			}
+
+			if(toClean != null){
+				rc.clearRubble(rc.getLocation().directionTo(toClean));
+			}
+		}
 	}
 	
 	/**

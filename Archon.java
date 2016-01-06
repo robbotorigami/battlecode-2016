@@ -24,6 +24,12 @@ public class Archon extends BaseRobot {
 					}
 				}
 			}
+			try {
+				springCleaning();
+			} catch (GameActionException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			Clock.yield();
 		}
 

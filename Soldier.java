@@ -15,7 +15,7 @@ public class Soldier extends BaseRobot {
 			boolean neededToMove = false;
 			for(RobotInfo bot : bots){
 				if(bot.type == RobotType.ARCHON){
-					if(rc.getLocation().distanceSquaredTo(bot.location) < 3){
+					if(rc.getLocation().distanceSquaredTo(bot.location) < (3 + 0.005 * rc.getRoundNum())){
 						if(rc.canMove(rc.getLocation().directionTo(bot.location).opposite())){
 							neededToMove = true;
 							if(rc.isCoreReady()){
@@ -38,8 +38,12 @@ public class Soldier extends BaseRobot {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-			}else{
-				rc.setIndicatorString(0, "Not in position");
+			}
+			try {
+				springCleaning();
+			} catch (GameActionException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 			Clock.yield();
 		}
