@@ -10,6 +10,9 @@ public class Archon extends BaseRobot {
 
 	@Override
 	public void run() {
+		sayHello();
+		Clock.yield();
+		judgeSociety();
 		while(true){
 			if(rc.isCoreReady()){
 				Direction[] toTry = Direction.values();
