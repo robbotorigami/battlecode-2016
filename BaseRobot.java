@@ -9,6 +9,9 @@ public abstract class BaseRobot {
 	public RobotController rc;
 	public Random rand; //Random number generator
 	public Direction[] directionValues;
+	public MapLocation archonSpawn;
+	public ArrayList<MapLocation> scoutedLocations;
+	
 	
 	public BaseRobot(RobotController rcin){
 		rc = rcin;
@@ -299,5 +302,19 @@ public abstract class BaseRobot {
 		}
 		
 		
+	}
+	
+	
+	public MapLocation findNearestUnexploredBlock(){
+		MapLocation currentLocation = rc.getLocation();
+		for(int i = 0; i <= 50; i++){
+			for(int j = 0; j<= 50; j++){
+				if(!scoutedLocations.contains(new MapLocation(currentLocation.x + i, currentLocation.y + j))){
+					return currentLocation;
+				}
+			}
+		}
+		
+		return null;
 	}
 }
