@@ -2,6 +2,7 @@ package team022;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Random;
 import battlecode.common.*;
 
@@ -9,6 +10,8 @@ public abstract class BaseRobot {
 	public RobotController rc;
 	public Random rand; //Random number generator
 	public Direction[] directionValues;
+	public int archonCount = 1;
+	public int myRank = 0;
 	
 	public BaseRobot(RobotController rcin){
 		rc = rcin;
@@ -300,4 +303,32 @@ public abstract class BaseRobot {
 		
 		
 	}
+	//count archons
+	public void sayHello() {
+		
+		try {
+			rc.broadcastSignal(10000);
+		} catch (GameActionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		rc.setIndicatorString(0, "said hello");
+	}
+	public void judgeSociety(){
+		Signal[] archons = rc.emptySignalQueue();
+		ArrayList<Integer> IDList= new ArrayList<Integer>();
+		IDList.add(rc.getID());
+		for(Signal archon : archons){
+			if(archon.getTeam() == rc.getTeam()){
+				IDList.add(archon.getID());
+				archonCount++;
+			}
+		}
+		
+		Collections.sort(IDList);
+		myRank = IDList.indexOf(rc.getID());
+		rc.setIndicatorString(1, ""+archonCount+myRank);
+		
+	}
+	
 }
