@@ -284,7 +284,7 @@ public abstract class BaseRobot {
 	 */
 	public void destroy() throws GameActionException {
 		ArrayList<RobotInfo> enemies = new ArrayList<RobotInfo>(Arrays.asList(rc.senseNearbyRobots(rc.getType().attackRadiusSquared, rc.getTeam().opponent())));
-		enemies.addAll(new ArrayList<RobotInfo>(Arrays.asList(rc.senseNearbyRobots(rc.getType().attackRadiusSquared, Team.ZOMBIE))));
+		enemies.addAll(Arrays.asList(rc.senseNearbyRobots(rc.getType().attackRadiusSquared, Team.ZOMBIE))));
 		rc.setIndicatorString(1, ""+enemies.size());
 		RobotInfo toDestroy = null;
 		int lowestHealth =100000;
@@ -348,4 +348,6 @@ public abstract class BaseRobot {
 		
 		return null;
 	}
+
+	
 }
