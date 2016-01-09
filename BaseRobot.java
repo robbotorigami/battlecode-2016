@@ -12,8 +12,6 @@ public abstract class BaseRobot {
 	public Direction[] directionValues;
 	public int archonCount = 1;
 	public MapLocation archonSpawn;
-	public int myRank = 0;
-	public ArrayList<MapLocation> scoutedLocations;
 	
 	
 	public BaseRobot(RobotController rcin){
@@ -271,8 +269,10 @@ public abstract class BaseRobot {
 					toClean = square;
 				}
 			}
-
-			if(toClean != null){
+			if(toClean == null) return;
+			Direction dir = rc.getLocation().directionTo(toClean);
+			
+			if(dir != Direction.OMNI){
 				rc.clearRubble(rc.getLocation().directionTo(toClean));
 			}
 		}
@@ -305,47 +305,5 @@ public abstract class BaseRobot {
 		}
 		
 		
-	}
-	//count archons
-	public void sayHello() {
-		
-		try {
-			rc.broadcastSignal(10000);
-		} catch (GameActionException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		rc.setIndicatorString(0, "said hello");
-	}
-	public void judgeSociety(){
-		Signal[] archons = rc.emptySignalQueue();
-		ArrayList<Integer> IDList= new ArrayList<Integer>();
-		IDList.add(rc.getID());
-		for(Signal archon : archons){
-			if(archon.getTeam() == rc.getTeam()){
-				IDList.add(archon.getID());
-				archonCount++;
-			}
-		}
-		
-		Collections.sort(IDList);
-		myRank = IDList.indexOf(rc.getID());
-		rc.setIndicatorString(1, ""+archonCount+myRank);
-		
-	}
-	
-	
-	
-	public MapLocation findNearestUnexploredBlock(){
-		MapLocation currentLocation = rc.getLocation();
-		for(int i = 0; i <= 50; i++){
-			for(int j = 0; j<= 50; j++){
-				if(!scoutedLocations.contains(new MapLocation(currentLocation.x + i, currentLocation.y + j))){
-					return currentLocation;
-				}
-			}
-		}
-		
-		return null;
 	}
 }

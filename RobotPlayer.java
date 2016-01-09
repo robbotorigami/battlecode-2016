@@ -19,6 +19,12 @@ public class RobotPlayer {
         case SOLDIER:
         	myself = new Soldier(rc);
         	break;
+        case GUARD:
+        	myself = new Guard(rc);
+        	break;
+        case SCOUT:
+        	myself = new Scout(rc);
+        	break;
         default:
         	return;
         }
