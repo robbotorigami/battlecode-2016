@@ -47,9 +47,9 @@ public class Scout extends BaseRobot {
 				e.printStackTrace();
 			}
 			rc.setIndicatorString(0, String.format("Top:%d Bottom:%d Left:%d Right:%d", mapTop, mapBottom, mapLeft, mapRight));
-			if(rc.getRoundNum()%100 == 0){
+			/*if(rc.getRoundNum()%100 == 0){
 				printScoutedArea();
-			}
+			}*/
 			Clock.yield();
 		}
 
@@ -123,6 +123,8 @@ public class Scout extends BaseRobot {
 	}
 	
 	private void edgeOTheWorld(MapLocation square) {
+		if(!(rc.getLocation().x == square.x) && !(rc.getLocation().y == square.y))return;
+		
 		switch(rc.getLocation().directionTo(square)){
 		case NORTH:
 			if(mapTop < square.y)
