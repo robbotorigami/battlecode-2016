@@ -108,9 +108,8 @@ public abstract class BaseRobot {
 					try {
 						rc.move(dir);
 						oldLocs.add(rc.getLocation());
-						if(oldLocs.size() > 5){
-							oldLocs.remove(0);
-						}
+						oldLocs.remove(0);
+						break;
 					} catch (GameActionException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -207,7 +206,6 @@ public abstract class BaseRobot {
 					vecx += dangerscore[i] * dirToCos(directionValues[i-1]);
 					vecy += dangerscore[i] * dirToSin(directionValues[i-1]);
 				}
-				System.out.println(""+vecx+" "+vecy);
 				if(vecx != 0 || vecy != 0){
 					double angle = Math.atan2(vecy, vecx);
 					Direction desired = angleToDir(angle).opposite();
@@ -419,5 +417,19 @@ public abstract class BaseRobot {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+	
+	public void attack(MapLocation loc){
+		seek(loc);
+		try {
+			destroy();
+		} catch (GameActionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public void seek(MapLocation loc){
+		slugPathing(loc);
 	}
 }

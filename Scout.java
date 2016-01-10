@@ -9,7 +9,7 @@ public class Scout extends BaseRobot {
 	public boolean[][] scoutedLocations;
 	public MapLocation initalLocation;
 	
-	public scoutingStyle ourStyle = scoutingStyle.SIMPLE;
+	public scoutingStyle ourStyle = scoutingStyle.EXPLORATORY;
 	
 	public int mapTop = -100000;
 	public int mapBottom = 100000;
@@ -53,13 +53,9 @@ public class Scout extends BaseRobot {
 			int rold1 = rc.getRoundNum();
 			if(rc.isCoreReady()){
 				MapLocation nextTarget = findNearestUnexploredBlock();
-				rc.setIndicatorString(1, String.format("Goto: (%d, %d)", nextTarget.x, nextTarget.y));
 				if(nextTarget != null){
-					try {
-						moveAsCloseToDirection(rc.getLocation().directionTo(nextTarget), true);
-					} catch (GameActionException e) {
-						e.printStackTrace();
-					}
+					rc.setIndicatorString(1, String.format("Goto: (%d, %d)", nextTarget.x, nextTarget.y));
+					slugPathing(nextTarget);
 				}
 			}
 			int prof2 = Clock.getBytecodeNum();
@@ -78,9 +74,7 @@ public class Scout extends BaseRobot {
 //			if(rc.getRoundNum()%100 == 0){
 //				printScoutedArea();
 //			}
-			if(needsFreedom(initalLocation.x, initalLocation.y)){
-				rc.setIndicatorString(1, "Uh oh");
-			}
+			scan();
 			Clock.yield();
 		}
 
@@ -109,7 +103,7 @@ public class Scout extends BaseRobot {
 		switch(ourStyle){
 		case EXPLORATORY:
 			MapLocation currentLocation = rc.getLocation();
-			for(int size = 6; size < 50; size+=4){
+			for(int size = 7; size < 50; size+=1){
 				int i, j;
 				//Upper row
 				i = size;
@@ -187,7 +181,7 @@ public class Scout extends BaseRobot {
 			for(int i = 0; i < 8; i++){
 				MapLocation block = rc.getLocation();
 				for(int j = 0; j < 8; j++){
-					if(block.x < mapLeft || block.x > mapRight || block.y < mapTop || block.y > mapRight){
+					if(block.x < mapLeft || block.x > mapRight || block.y < mapTop || block.y > mapBottom){
 						block = block.add(directionValues[i], 100);
 						break;
 					}
@@ -206,7 +200,7 @@ public class Scout extends BaseRobot {
 					index = i;
 					smallestDistance = distanceToNextBlock[i];
 				}
-				//System.out.println(""+i+" " + distanceToNextBlock[i]);
+				System.out.println(""+i + " " + distanceToNextBlock[i]);
 			}
 			MapLocation toReturn = rc.getLocation().add(directionValues[index], smallestDistance);
 			rc.setIndicatorDot(toReturn, 0, 255, 255);
@@ -236,6 +230,25 @@ public class Scout extends BaseRobot {
 			}
 			square = globalToRelative(square);
 			scoutedLocations[square.x][square.y] = true;	
+		}
+	}
+	
+	public void scan(){
+		RobotInfo[] zombles = rc.senseNearbyRobots(rc.getType().sensorRadiusSquared, Team.ZOMBIE);
+		for(RobotInfo zomble : zombles){
+			if(zomble.type == RobotType.ZOMBIEDEN){
+				weGotOne(zomble.location);
+			}
+		}
+	}
+	
+	public void weGotOne(MapLocation denLoc){
+		int loc = ComSystem.mapToInt(denLoc);
+		try {
+			rc.broadcastMessageSignal(0x01, loc, rc.getLocation().distanceSquaredTo(initalLocation)+ 100);
+		} catch (GameActionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 	
@@ -273,7 +286,7 @@ public class Scout extends BaseRobot {
 	}
 	
 	public boolean needsFreedom(int x, int y){
-		if(x < mapLeft || x > mapRight || y < mapTop || y > mapRight){
+		if(x < mapLeft || x > mapRight || y < mapTop || y > mapBottom){
 			return false;
 		}
 		MapLocation loc = globalToRelative(new MapLocation(x, y));

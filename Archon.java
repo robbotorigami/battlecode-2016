@@ -12,6 +12,8 @@ public class Archon extends BaseRobot {
 	public double SoldierSpawnProp = 0.2;
 	public double GuardSpawnProp = 0.6;
 	public double TurretSpawnProp = 0.2;
+	
+	public MapLocation zombieDen = null;
 
 	public Archon(RobotController rcin) {
 		super(rcin);
@@ -37,12 +39,23 @@ public class Archon extends BaseRobot {
 			if(rc.isCoreReady()){
 				spawnUnitsProp();
 			}
+			if(zombieDen != null){
+				try {
+					rc.broadcastMessageSignal(0x00, ComSystem.mapToInt(zombieDen), 2);
+					if(rc.getLocation().distanceSquaredTo(zombieDen) > 30)
+						slugPathing(zombieDen);
+				} catch (GameActionException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
 			try {
 				springCleaning();
 			} catch (GameActionException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+			handleMessages();
 			Clock.yield();
 		}
 
@@ -66,18 +79,22 @@ public class Archon extends BaseRobot {
 				}
 			}
 		}
-		if(rc.isCoreReady()){
-			Direction[] toTry = directionValues;
-			for(Direction dir : toTry){
-				if(rc.canBuild(dir,  spawnMeister)&& rc.isCoreReady()){
-					try {
-						rc.build(dir, spawnMeister);
-					} catch (GameActionException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+		if(myRank < 2){
+			if(rc.isCoreReady()){
+				Direction[] toTry = directionValues;
+				for(Direction dir : toTry){
+					if(rc.canBuild(dir,  spawnMeister)&& rc.isCoreReady()){
+						try {
+							rc.build(dir, spawnMeister);
+						} catch (GameActionException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
 					}
 				}
 			}
+		}else{
+			
 		}
 	}
 
@@ -99,6 +116,7 @@ public class Archon extends BaseRobot {
 		}
 		
 	}
+	
 
 	public void sayHello() {
 
@@ -127,7 +145,11 @@ public class Archon extends BaseRobot {
 	}
 	
 	public void handleMessages(){
-		
+		for(Signal message : rc.emptySignalQueue()){
+			if(ComSystem.getFlag(message) == 0x01){
+				zombieDen = ComSystem.intToMap(message.getMessage()[1]);
+			}
+		}
 	}
 
 }

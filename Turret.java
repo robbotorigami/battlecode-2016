@@ -12,6 +12,11 @@ public class Turret extends BaseRobot {
 	@Override
 	public void run() {
 		while(true){
+			try {
+				destroy();
+			} catch (GameActionException e) {
+				e.printStackTrace();
+			}
 			Clock.yield();
 		}
 

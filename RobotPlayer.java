@@ -25,6 +25,9 @@ public class RobotPlayer {
         case SCOUT:
         	myself = new Scout(rc);
         	break;
+        case TURRET:
+        	myself = new Turret(rc);
+        	break;
         default:
         	return;
         }
