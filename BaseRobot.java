@@ -12,6 +12,9 @@ public abstract class BaseRobot {
 	public Direction[] directionValues;
 	public int archonCount = 1;
 	public MapLocation archonSpawn;
+	public ComSystem com;
+	
+	public ArrayList<MapLocation> oldLocs;
 	
 	
 	public BaseRobot(RobotController rcin){
@@ -19,6 +22,10 @@ public abstract class BaseRobot {
 		rand = new Random(rc.getID());
 		directionValues = new Direction[]{Direction.NORTH, Direction.NORTH_EAST, Direction.EAST, Direction.SOUTH_EAST,
                 Direction.SOUTH, Direction.SOUTH_WEST, Direction.WEST, Direction.NORTH_WEST};
+		
+		com = new ComSystem(rc);
+		
+		oldLocs = new ArrayList<MapLocation>();
 		
 	}
 
@@ -74,6 +81,44 @@ public abstract class BaseRobot {
 			}
 		}	
 		return false;
+	}
+	
+	//Does the same thing as move as close to, but is better
+	public void slugPathing(MapLocation toPathTo){
+		Direction toMove = rc.getLocation().directionTo(toPathTo);
+		if(rc.isCoreReady()){
+			Direction[] toTry;
+			toTry = new Direction[]{toMove,
+					toMove.rotateLeft(),
+					toMove.rotateRight(),
+					toMove.rotateLeft().rotateLeft(),
+					toMove.rotateRight().rotateRight(),
+					toMove.rotateLeft().rotateLeft().rotateLeft(),
+					toMove.rotateRight().rotateRight().rotateRight(),
+					toMove.rotateLeft().rotateLeft().rotateLeft().rotateLeft()
+			};
+			for(Direction dir:toTry){
+				boolean okay = true;
+				for(MapLocation loc : oldLocs)
+					if(loc.equals(rc.getLocation().add(dir)))
+						okay = false;
+				
+				if(!okay) continue;
+				if(rc.canMove(dir)&&rc.isCoreReady()){
+					try {
+						rc.move(dir);
+						oldLocs.add(rc.getLocation());
+						if(oldLocs.size() > 5){
+							oldLocs.remove(0);
+						}
+					} catch (GameActionException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					return;
+				}
+			}
+		}	
 	}
 	
 	//Returns a random direction	
@@ -283,9 +328,41 @@ public abstract class BaseRobot {
 	 * @throws GameActionException
 	 */
 	public void destroy() throws GameActionException {
-		ArrayList<RobotInfo> enemies = new ArrayList<RobotInfo>(Arrays.asList(rc.senseNearbyRobots(rc.getType().attackRadiusSquared, rc.getTeam().opponent())));
-		enemies.addAll(new ArrayList<RobotInfo>(Arrays.asList(rc.senseNearbyRobots(rc.getType().attackRadiusSquared, Team.ZOMBIE))));
-		rc.setIndicatorString(1, ""+enemies.size());
+		RobotInfo toDestroy = commonEnemy(senseAllNearbyFoes(true));
+		if(toDestroy != null){
+			rc.setIndicatorString(1, "Should be killing" + toDestroy.ID);
+			if(rc.isWeaponReady()&&rc.canAttackLocation(toDestroy.location)){
+				rc.attackLocation(toDestroy.location);
+			}
+		}
+	}
+	
+	public RobotInfo[] senseAllNearbyFoes(boolean attack){
+		RobotInfo[] enemies;
+		RobotInfo[] zombles;
+		
+		if(attack){
+			enemies = rc.senseNearbyRobots(rc.getType().attackRadiusSquared, rc.getTeam().opponent());
+			zombles = rc.senseNearbyRobots(rc.getType().attackRadiusSquared, Team.ZOMBIE);
+		}else{
+			enemies = rc.senseNearbyRobots(rc.getType().sensorRadiusSquared, rc.getTeam().opponent());
+			zombles = rc.senseNearbyRobots(rc.getType().sensorRadiusSquared, Team.ZOMBIE);
+		}
+		RobotInfo[] all = new RobotInfo[enemies.length + zombles.length];
+		int i = 0;
+		for(RobotInfo badGuy : enemies){
+			all[i] = badGuy;
+			i++;
+		}
+		for(RobotInfo badGuy : zombles){
+			all[i] = badGuy;
+			i++;
+		}
+		
+		return all;
+	}
+	
+	public RobotInfo commonEnemy(RobotInfo[] enemies){
 		RobotInfo toDestroy = null;
 		int lowestHealth =100000;
 		int lowestID = 1000000;
@@ -297,13 +374,50 @@ public abstract class BaseRobot {
 				toDestroy = enemy;
 			}
 		}
-		if(toDestroy != null){
-			rc.setIndicatorString(1, "Should be killing" + toDestroy.ID);
-			if(rc.isWeaponReady()&&rc.canAttackLocation(toDestroy.location)){
-				rc.attackLocation(toDestroy.location);
+		return toDestroy;
+	}
+	
+	public void bullRush() throws GameActionException{
+		RobotInfo rodeoClown = commonEnemy(senseAllNearbyFoes(false));
+		if(rodeoClown != null){
+			if(rc.getLocation().distanceSquaredTo(rodeoClown.location) > rc.getType().attackRadiusSquared){
+				slugPathing(rodeoClown.location);
 			}
 		}
+	}
+	
+	public void crowedArchon() throws GameActionException{
+		RobotInfo[] bots = rc.senseNearbyRobots(rc.getType().sensorRadiusSquared, rc.getTeam());
+		for(RobotInfo bot : bots){
+			if(bot.type == RobotType.ARCHON){
+				if(rc.getLocation().distanceSquaredTo(bot.location) > (3 + 0.005 * rc.getRoundNum())){
+					moveAsCloseToDirection(rc.getLocation().directionTo(bot.location), false);
+				}
+				
+			}
+		}
+	}
+	
+	public void defense(){
+		try {
+			bullRush();
+		} catch (GameActionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
+		try {
+			destroy();
+		} catch (GameActionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
+		try {
+			crowedArchon();
+		} catch (GameActionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 }

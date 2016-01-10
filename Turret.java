@@ -1,6 +1,6 @@
 package team022;
 
-import battlecode.common.RobotController;
+import battlecode.common.*;
 
 public class Turret extends BaseRobot {
 
@@ -11,7 +11,9 @@ public class Turret extends BaseRobot {
 
 	@Override
 	public void run() {
-		// TODO Auto-generated method stub
+		while(true){
+			Clock.yield();
+		}
 
 	}
 

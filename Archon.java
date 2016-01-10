@@ -8,6 +8,10 @@ import battlecode.common.*;
 public class Archon extends BaseRobot {
 
 	public int myRank = 0;
+	
+	public double SoldierSpawnProp = 0.2;
+	public double GuardSpawnProp = 0.6;
+	public double TurretSpawnProp = 0.2;
 
 	public Archon(RobotController rcin) {
 		super(rcin);
@@ -18,36 +22,20 @@ public class Archon extends BaseRobot {
 		sayHello();
 		Clock.yield();
 		judgeSociety();
+		
 		if(myRank == 0){
-			outer: while(true){
-				if(rc.isCoreReady()){
-					for(Direction dir : directionValues){
-						if(rc.canBuild(dir,  RobotType.SCOUT)){
-							try {
-								rc.build(dir, RobotType.SCOUT);
-								break outer;
-							} catch (GameActionException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
-						}
-					}
-				}
-			}
+			makeScout();
+			
 		}
 		while(true){
+			try {
+				DashAway(4.0);
+			} catch (GameActionException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 			if(rc.isCoreReady()){
-				Direction[] toTry = directionValues;
-				for(Direction dir : toTry){
-					if(rc.canBuild(dir,  RobotType.SOLDIER)&& rc.isCoreReady()){
-						try {
-							rc.build(dir, RobotType.SOLDIER);
-						} catch (GameActionException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-					}
-				}
+				spawnUnitsProp();
 			}
 			try {
 				springCleaning();
@@ -59,6 +47,58 @@ public class Archon extends BaseRobot {
 		}
 
 	}
+	
+	private void spawnUnitsProp(){
+		RobotType spawnMeister = null;
+		double diceRoll = rand.nextDouble();
+		if(diceRoll < SoldierSpawnProp){
+			spawnMeister = RobotType.SOLDIER;
+		}else{
+			diceRoll -= SoldierSpawnProp;
+			if(diceRoll < GuardSpawnProp){
+				spawnMeister = RobotType.GUARD;
+			}else{
+				diceRoll -= GuardSpawnProp;
+				if(diceRoll < TurretSpawnProp){
+					spawnMeister = RobotType.TURRET;
+				}else{
+					spawnMeister = RobotType.VIPER;
+				}
+			}
+		}
+		if(rc.isCoreReady()){
+			Direction[] toTry = directionValues;
+			for(Direction dir : toTry){
+				if(rc.canBuild(dir,  spawnMeister)&& rc.isCoreReady()){
+					try {
+						rc.build(dir, spawnMeister);
+					} catch (GameActionException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+			}
+		}
+	}
+
+	private void makeScout() {
+		outer: while(true){
+			if(rc.isCoreReady()){
+				for(Direction dir : directionValues){
+					if(rc.canBuild(dir,  RobotType.SCOUT)){
+						try {
+							rc.build(dir, RobotType.SCOUT);
+							break outer;
+						} catch (GameActionException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+				}
+			}
+		}
+		
+	}
 
 	public void sayHello() {
 
@@ -68,7 +108,6 @@ public class Archon extends BaseRobot {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		rc.setIndicatorString(0, "said hello");
 	}
 	public void judgeSociety(){
 		Signal[] archons = rc.emptySignalQueue();
@@ -85,6 +124,10 @@ public class Archon extends BaseRobot {
 		myRank = IDList.indexOf(rc.getID());
 		rc.setIndicatorString(1, ""+archonCount+myRank);
 
+	}
+	
+	public void handleMessages(){
+		
 	}
 
 }

@@ -32,12 +32,7 @@ public class Soldier extends BaseRobot {
 			}
 			if(!neededToMove){
 				rc.setIndicatorString(0, "In Position, TIME TO KILL!!!");
-				try {
-					destroy();
-				} catch (GameActionException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				defense();
 			}
 			try {
 				springCleaning();
