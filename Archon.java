@@ -31,25 +31,17 @@ public class Archon extends BaseRobot {
 			
 		}
 		while(true){
-			
+			Clock.yield();
 			try {
 				DashAway(0.0);
 			} catch (GameActionException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
-			while(threat>0){
-				try {
-					DashAway(0.0);
-
-					obamaCare();
-				} catch (GameActionException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				Clock.yield();
-			}
 			obamaCare();
+			
+			if(threat > 0) continue;
+			
 			if(rc.isCoreReady()){
 				spawnUnitsProp();
 			}
@@ -63,7 +55,6 @@ public class Archon extends BaseRobot {
 				e.printStackTrace();
 			}
 			handleMessages();
-			Clock.yield();
 		}
 
 	}
@@ -185,7 +176,8 @@ public class Archon extends BaseRobot {
 	public void handleMessages(){
 		for(Signal message : rc.emptySignalQueue()){
 			if(ComSystem.getFlag(message) == 0x01){
-				targets.add(ComSystem.intToMap(message.getMessage()[1]));
+				if(notInTargets(ComSystem.intToMap(message.getMessage()[1])))
+					targets.add(ComSystem.intToMap(message.getMessage()[1]));
 			}
 		}
 	}

@@ -52,6 +52,7 @@ public class ComSystem {
 	}
 	
 	public static byte getFlag(Signal message){
+		if(message.getMessage() == null) return (byte) 0xFF;
 		return (byte)( message.getMessage()[0] & 0xFF);
 	}
 	

@@ -51,9 +51,12 @@ public class Guard extends BaseRobot {
 				Clock.yield();
 				break;
 			case ATTACKING:
+				rc.setIndicatorString(2, den.toString());
 				try {
-					if(rc.canSense(den) && rc.senseRobotAtLocation(den) == null){
+					if(denGone()){
 						state = GuardState.RETURNING;
+						destroyedTargets.add(den);
+						targets.remove(den);
 						break;
 					}
 				} catch (GameActionException e1) {
@@ -93,6 +96,16 @@ public class Guard extends BaseRobot {
 			}
 			rc.setIndicatorString(0, state.toString());
 		}
+	}
+
+	private boolean denGone() throws GameActionException {
+		if(rc.canSense(den)){
+			RobotInfo checker = rc.senseRobotAtLocation(den);
+			if(checker == null || checker.type != RobotType.ZOMBIEDEN){
+				return true;
+			}
+		}
+		return false;
 	}
 
 }

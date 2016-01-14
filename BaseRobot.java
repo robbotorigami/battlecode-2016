@@ -19,6 +19,7 @@ public abstract class BaseRobot {
 	
 	public ArrayList<MapLocation> oldLocs;
 	public ArrayList<MapLocation> targets = new ArrayList<>();
+	public ArrayList<MapLocation> destroyedTargets = new ArrayList<>();
 	
 	
 	public BaseRobot(RobotController rcin){
@@ -464,11 +465,17 @@ public abstract class BaseRobot {
 				break;
 			}
 		}
+		for(MapLocation destroyed : destroyedTargets){
+			if(toCheck.equals(destroyed)){
+				notIn = false;
+			}
+		}
 		return notIn;
 	}
 	
 	
 	public void seek(MapLocation loc){
-		slugPathing(loc);
+		if(rc.getLocation().distanceSquaredTo(loc) > rc.getType().attackRadiusSquared)
+			slugPathing(loc);
 	}
 }
