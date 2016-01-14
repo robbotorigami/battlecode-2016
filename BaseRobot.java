@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Random;
 import battlecode.common.*;
+import team022.Guard.GuardState;
 
 public abstract class BaseRobot {
 	public RobotController rc;
@@ -14,7 +15,10 @@ public abstract class BaseRobot {
 	public MapLocation archonSpawn;
 	public ComSystem com;
 	
+	public double threat;
+	
 	public ArrayList<MapLocation> oldLocs;
+	public ArrayList<MapLocation> targets = new ArrayList<>();
 	
 	
 	public BaseRobot(RobotController rcin){
@@ -182,6 +186,8 @@ public abstract class BaseRobot {
 				}
 			}
 		}
+		
+		threat = dangerscore[0];
 
 		
 		if(dangerscore[0] > bravado){
@@ -428,6 +434,39 @@ public abstract class BaseRobot {
 			e.printStackTrace();
 		}
 	}
+	
+	public MapLocation closestTarget(){
+		int shortestDistance = 10000000;
+		MapLocation bestTarget = null;
+		for(MapLocation target : targets){
+			if(shortestDistance > target.distanceSquaredTo(rc.getLocation())){
+				bestTarget = target;
+				shortestDistance = target.distanceSquaredTo(rc.getLocation());
+			}
+		}
+		return bestTarget;
+	}
+	
+	public void recieveTargets(){
+		for(Signal message : rc.emptySignalQueue()){
+			if(ComSystem.getFlag( message ) == 0x00){
+				if(notInTargets(ComSystem.intToMap(message.getMessage()[1])))
+					targets.add(ComSystem.intToMap(message.getMessage()[1]));
+			}
+		}
+	}
+	
+	public boolean notInTargets(MapLocation toCheck){
+		boolean notIn = true;
+		for(MapLocation inTargets : targets){
+			if(toCheck.equals(inTargets)){
+				notIn = false;
+				break;
+			}
+		}
+		return notIn;
+	}
+	
 	
 	public void seek(MapLocation loc){
 		slugPathing(loc);

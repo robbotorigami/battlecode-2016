@@ -23,13 +23,13 @@ public class Guard extends BaseRobot {
 		while(true){
 			switch(state){
 			case DEFENDING:
-				for(Signal message : rc.emptySignalQueue()){
-					if(ComSystem.getFlag( message ) == 0x00){
-						den = ComSystem.intToMap(message.getMessage()[1]);
-						state = GuardState.ATTACKING;
-						initialLocation = rc.getLocation();
-						break;
-					}
+				recieveTargets();
+				MapLocation target = closestTarget();
+				if(target != null){
+					den = target;
+					state = GuardState.ATTACKING;
+					initialLocation = rc.getLocation();
+					break;
 				}
 				if(rc.isCoreReady() && rand.nextDouble() < 0.5){
 					try {

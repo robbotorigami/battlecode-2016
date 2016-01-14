@@ -13,7 +13,8 @@ public class Archon extends BaseRobot {
 	public double GuardSpawnProp = 0.6;
 	public double TurretSpawnProp = 0.2;
 	
-	public MapLocation zombieDen = null;
+	
+	
 
 	public Archon(RobotController rcin) {
 		super(rcin);
@@ -30,24 +31,30 @@ public class Archon extends BaseRobot {
 			
 		}
 		while(true){
+			
 			try {
-				DashAway(4.0);
+				DashAway(0.0);
 			} catch (GameActionException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
-			if(rc.isCoreReady()){
-				spawnUnitsProp();
-			}
-			if(zombieDen != null){
+			while(threat>0){
 				try {
-					rc.broadcastMessageSignal(0x00, ComSystem.mapToInt(zombieDen), 2);
-					if(rc.getLocation().distanceSquaredTo(zombieDen) > 30)
-						slugPathing(zombieDen);
+					DashAway(0.0);
+
+					obamaCare();
 				} catch (GameActionException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
+				Clock.yield();
+			}
+			obamaCare();
+			if(rc.isCoreReady()){
+				spawnUnitsProp();
+			}
+			if(rc.getRoundNum()%40 == 0){
+				sendMessages();
 			}
 			try {
 				springCleaning();
@@ -59,6 +66,17 @@ public class Archon extends BaseRobot {
 			Clock.yield();
 		}
 
+	}
+	
+	private void sendMessages(){
+		for(MapLocation zombieDen : targets){
+			try {
+				rc.broadcastMessageSignal(0x00, ComSystem.mapToInt(zombieDen), 30);
+			} catch (GameActionException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	}
 	
 	private void spawnUnitsProp(){
@@ -144,10 +162,30 @@ public class Archon extends BaseRobot {
 
 	}
 	
+	public void obamaCare(){
+		RobotInfo[] patients = rc.senseNearbyRobots(rc.getType().attackRadiusSquared, rc.getTeam());
+		double lowestHP = 1000000;
+		RobotInfo deadyMcDeaderson = null;
+		for(RobotInfo patient : patients){
+			if(patient.health/patient.type.maxHealth < lowestHP){
+				deadyMcDeaderson = patient;
+				lowestHP = patient.health/patient.type.maxHealth;
+			}
+		}
+		if(deadyMcDeaderson != null){
+			try {
+				rc.repair(deadyMcDeaderson.location);
+			} catch (GameActionException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
+	
 	public void handleMessages(){
 		for(Signal message : rc.emptySignalQueue()){
 			if(ComSystem.getFlag(message) == 0x01){
-				zombieDen = ComSystem.intToMap(message.getMessage()[1]);
+				targets.add(ComSystem.intToMap(message.getMessage()[1]));
 			}
 		}
 	}
