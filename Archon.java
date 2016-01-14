@@ -9,8 +9,8 @@ public class Archon extends BaseRobot {
 
 	public int myRank = 0;
 	
-	public double SoldierSpawnProp = 0.2;
-	public double GuardSpawnProp = 0.6;
+	public double SoldierSpawnProp = 0.5;
+	public double GuardSpawnProp = 0.3;
 	public double TurretSpawnProp = 0.2;
 	
 	
@@ -41,6 +41,22 @@ public class Archon extends BaseRobot {
 			obamaCare();
 			
 			if(threat > 0) continue;
+			
+			if(myRank > 0 && closestTarget() != null){
+				if(rand.nextDouble() < 0.5){
+					slugPathing(closestTarget());
+				}
+			}
+			try {
+				if(closestTarget() != null)
+					if(denGone(closestTarget())){
+						destroyedTargets.add(closestTarget());
+						targets.remove(closestTarget());
+					}
+			} catch (GameActionException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 			
 			if(rc.isCoreReady()){
 				spawnUnitsProp();
@@ -158,7 +174,7 @@ public class Archon extends BaseRobot {
 		double lowestHP = 1000000;
 		RobotInfo deadyMcDeaderson = null;
 		for(RobotInfo patient : patients){
-			if(patient.health/patient.type.maxHealth < lowestHP){
+			if(patient.health/patient.type.maxHealth < lowestHP && patient.type != RobotType.ARCHON){
 				deadyMcDeaderson = patient;
 				lowestHP = patient.health/patient.type.maxHealth;
 			}
@@ -180,6 +196,16 @@ public class Archon extends BaseRobot {
 					targets.add(ComSystem.intToMap(message.getMessage()[1]));
 			}
 		}
+	}
+	
+	private boolean denGone(MapLocation den) throws GameActionException {
+		if(rc.canSense(den)){
+			RobotInfo checker = rc.senseRobotAtLocation(den);
+			if(checker == null || checker.type != RobotType.ZOMBIEDEN){
+				return true;
+			}
+		}
+		return false;
 	}
 
 }
