@@ -18,6 +18,36 @@ public class Soldier extends BaseRobot {
 
 	@Override
 	public void run() {
+		switch(lifePlan){
+		case MONGOLS:
+			mongolian();
+			break;
+		case TURRTLE:
+			turtle();
+			break;
+		}
+
+	}
+	
+	public void turtle(){
+		while(true){
+			boolean neededToMove = false;
+			iNeedMySpaceMom();
+			if(!neededToMove){
+				rc.setIndicatorString(0, "In Position, TIME TO KILL!!!");
+				defense();
+			}
+			try {
+				springCleaning();
+			} catch (GameActionException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			Clock.yield();
+		}
+	}
+	
+	public void mongolian(){
 		while(true){
 			switch(state){
 			case DEFENDING:
@@ -95,41 +125,6 @@ public class Soldier extends BaseRobot {
 			}
 			rc.setIndicatorString(0, state.toString());
 		}
-		/*
-		while(true){
-			RobotInfo[] bots = rc.senseNearbyRobots(rc.getType().sensorRadiusSquared, rc.getTeam());
-			boolean neededToMove = false;
-			for(RobotInfo bot : bots){
-				if(bot.type == RobotType.ARCHON){
-					if(rc.getLocation().distanceSquaredTo(bot.location) < (3 + 0.005 * rc.getRoundNum())){
-						if(rc.canMove(rc.getLocation().directionTo(bot.location).opposite())){
-							neededToMove = true;
-							if(rc.isCoreReady()){
-								try {
-									rc.move(rc.getLocation().directionTo(bot.location).opposite());
-								} catch (GameActionException e) {
-									// TODO Auto-generated catch block
-									e.printStackTrace();
-								}
-							}
-						}
-					}
-				}
-			}
-			if(!neededToMove){
-				rc.setIndicatorString(0, "In Position, TIME TO KILL!!!");
-				defense();
-			}
-			try {
-				springCleaning();
-			} catch (GameActionException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			Clock.yield();
-		}
-		*/
-
 	}
 	
 	private boolean denGone() throws GameActionException {

@@ -40,7 +40,16 @@ public class Scout extends BaseRobot {
 		while(true){
 			//MapLocation target = calculateTarget(randomAngle, radius);
 			
-			
+			if(rc.getHealth() < rc.getType().maxHealth/4){
+				while(true)
+					try {
+						DeathRattle();
+						break;
+					} catch (GameActionException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+			}
 			int prof0 = Clock.getBytecodeNum();
 			int rold0 = rc.getRoundNum();
 			try {
@@ -275,6 +284,10 @@ public class Scout extends BaseRobot {
 		default:
 		}
 		
+	}
+	
+	public void DeathRattle() throws GameActionException{
+		rc.broadcastMessageSignal(0x65, (int)rc.getHealth(), 10000);
 	}
 
 	public MapLocation globalToRelative(MapLocation toConvert){

@@ -28,6 +28,9 @@ public class RobotPlayer {
         case TURRET:
         	myself = new Turret(rc);
         	break;
+        case TTM:
+        	myself = new TTM(rc);
+        	break;
         default:
         	return;
         }

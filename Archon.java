@@ -9,10 +9,11 @@ public class Archon extends BaseRobot {
 
 	public int myRank = 0;
 	
-	public double SoldierSpawnProp = 0.5;
-	public double GuardSpawnProp = 0.3;
+	public double SoldierSpawnProp = 0.8;
+	public double GuardSpawnProp = 0.0;
 	public double TurretSpawnProp = 0.2;
 	
+	public MapLocation bossArchon;
 	
 	
 
@@ -28,51 +29,89 @@ public class Archon extends BaseRobot {
 		
 		if(myRank == 0){
 			makeScout();
-			
 		}
-		while(true){
-			Clock.yield();
-			try {
-				DashAway(0.0);
-			} catch (GameActionException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-			obamaCare();
-			
-			if(threat > 0) continue;
-			
-			if(myRank > 0 && closestTarget() != null){
-				if(rand.nextDouble() < 0.5){
-					slugPathing(closestTarget());
+		
+		switch(lifePlan){
+		case MONGOLS:
+			hoarders();
+			break;
+		case TURRTLE:
+			turtle();
+			break;
+		}
+
+	}
+	
+	public void turtle(){
+		//If we aren't boss, move toward boss
+		if(myRank != 0){
+			int breakout = 0;
+			while(rc.getLocation().distanceSquaredTo(bossArchon) > 2){
+				if(rc.isCoreReady()){
+					slugPathing(bossArchon);
+					breakout ++;
+					Clock.yield();
+					if(breakout > 50) break;
 				}
 			}
+		}
+		while(true){
+			if(myRank == 0){
+				handleExpansion();
+			}
+			obamaCare();
+			updateSpawnRates();
+			spawnUnitsProp();
+			Clock.yield();
+		}
+	}
+	
+	public void handleExpansion(){
+		MapLocation[] nearby = MapLocation.getAllMapLocationsWithinRadiusSq(rc.getLocation(), 2);
+		boolean overCrowded = true;
+		for(MapLocation toCheck : nearby){
 			try {
-				if(closestTarget() != null)
-					if(denGone(closestTarget())){
-						destroyedTargets.add(closestTarget());
-						targets.remove(closestTarget());
-					}
-			} catch (GameActionException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-			
-			if(rc.isCoreReady()){
-				spawnUnitsProp();
-			}
-			if(rc.getRoundNum()%40 == 0){
-				sendMessages();
-			}
-			try {
-				springCleaning();
+				if(rc.senseRobotAtLocation(toCheck) == null){
+					overCrowded = false;
+				}
 			} catch (GameActionException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			handleMessages();
 		}
-
+		if(overCrowded){
+			try {
+				rc.broadcastMessageSignal(0x42, 0, 2);
+			} catch (GameActionException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	public void updateSpawnRates(){
+		//this method only is run for turtling archons
+		//We want to spawn ~ 10 soldiers to set up a perimiter, then start spawning more turrets and a few guards
+		//So if we can only see <~10 of our units, we probably want to make some soldiers
+		if(rc.senseNearbyRobots(rc.getType().sensorRadiusSquared, rc.getTeam()).length < 10){
+			SoldierSpawnProp = 1.0;
+			GuardSpawnProp = 0.0;
+			TurretSpawnProp = 0.0;
+		}else{
+			SoldierSpawnProp = 0.0;
+			GuardSpawnProp = 0.0;
+			TurretSpawnProp = 1.0 - SoldierSpawnProp;
+		}
+	}
+	
+	public int soldiersInRange(){
+		int count = 0;
+		for(RobotInfo bot : rc.senseNearbyRobots(rc.getType().sensorRadiusSquared, rc.getTeam())){
+			if(bot.type == RobotType.SOLDIER){
+				count++;
+			}
+		}
+		return count;
 	}
 	
 	private void sendMessages(){
@@ -165,7 +204,16 @@ public class Archon extends BaseRobot {
 
 		Collections.sort(IDList);
 		myRank = IDList.indexOf(rc.getID());
-		rc.setIndicatorString(1, ""+archonCount+myRank);
+		
+		bossArchon = rc.getLocation();
+		
+		for(Signal archon : archons){
+			if(archon.getID() ==  IDList.get(0)){
+				bossArchon = archon.getLocation();
+				break;
+			}
+		}
+		rc.setIndicatorString(1, ""+archonCount+myRank+" "+bossArchon.toString());
 
 	}
 	
@@ -206,6 +254,52 @@ public class Archon extends BaseRobot {
 			}
 		}
 		return false;
+	}
+	
+	public void hoarders(){
+		while(true){
+			Clock.yield();
+			try {
+				DashAway(0.0);
+			} catch (GameActionException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			obamaCare();
+			
+			if(threat > 0) continue;
+			
+			if(myRank > 0 && closestTarget() != null){
+				if(rand.nextDouble() < 0.5){
+					slugPathing(closestTarget());
+				}
+			}
+			try {
+				if(closestTarget() != null)
+					if(denGone(closestTarget())){
+						destroyedTargets.add(closestTarget());
+						targets.remove(closestTarget());
+					}
+			} catch (GameActionException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			
+			if(rc.isCoreReady()){
+				spawnUnitsProp();
+			}
+			if(rc.getRoundNum()%40 == 0){
+				sendMessages();
+			}
+			
+			try {
+				springCleaning();
+			} catch (GameActionException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			handleMessages();
+		}
 	}
 
 }

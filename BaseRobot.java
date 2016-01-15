@@ -21,6 +21,12 @@ public abstract class BaseRobot {
 	public ArrayList<MapLocation> targets = new ArrayList<>();
 	public ArrayList<MapLocation> destroyedTargets = new ArrayList<>();
 	
+	public MetaStrategy lifePlan;
+	
+	public enum MetaStrategy{
+		TURRTLE, MONGOLS;
+	};
+	
 	
 	public BaseRobot(RobotController rcin){
 		rc = rcin;
@@ -31,6 +37,8 @@ public abstract class BaseRobot {
 		com = new ComSystem(rc);
 		
 		oldLocs = new ArrayList<MapLocation>();
+		
+		setMetaStrategy();
 		
 	}
 
@@ -373,6 +381,7 @@ public abstract class BaseRobot {
 		int lowestID = 1000000;
 		for(RobotInfo enemy : enemies){
 			boolean beatsBest = (enemy.health < lowestHealth)? true: enemy.ID < lowestID;
+			if(enemy.type == RobotType.BIGZOMBIE) return enemy;
 			if(beatsBest){
 				lowestHealth = (int) enemy.health;
 				lowestID = enemy.ID;
@@ -395,7 +404,7 @@ public abstract class BaseRobot {
 		RobotInfo[] bots = rc.senseNearbyRobots(rc.getType().sensorRadiusSquared, rc.getTeam());
 		for(RobotInfo bot : bots){
 			if(bot.type == RobotType.ARCHON){
-				if(rc.getLocation().distanceSquaredTo(bot.location) > (3 + 0.005 * rc.getRoundNum())){
+				if(rc.getLocation().distanceSquaredTo(bot.location) > 16){
 					moveAsCloseToDirection(rc.getLocation().directionTo(bot.location), false);
 				}
 				
@@ -477,5 +486,29 @@ public abstract class BaseRobot {
 	public void seek(MapLocation loc){
 		if(rc.getLocation().distanceSquaredTo(loc) > rc.getType().attackRadiusSquared)
 			slugPathing(loc);
+	}
+	
+	public void setMetaStrategy(){
+		MapLocation[] ourArchons = rc.getInitialArchonLocations(rc.getTeam());
+		boolean allWithinSix = true;
+		for(MapLocation archon : ourArchons){
+			boolean anyOneWithinSix = false;
+			for(MapLocation friend : ourArchons){
+				if(!friend.equals(archon) && friend.distanceSquaredTo(archon) <= 20*20){
+					anyOneWithinSix = true;
+					break;
+				}
+			}
+			if(!anyOneWithinSix){
+				allWithinSix = false;
+				break;
+			}
+		}
+		if(allWithinSix || ourArchons.length == 1){
+			lifePlan = MetaStrategy.TURRTLE;			
+		}else{
+			lifePlan = MetaStrategy.MONGOLS;
+		}
+		
 	}
 }

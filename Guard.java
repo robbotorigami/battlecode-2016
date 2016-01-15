@@ -20,6 +20,24 @@ public class Guard extends BaseRobot {
 
 	@Override
 	public void run() {
+		switch(lifePlan){
+		case MONGOLS:
+			mongolian();
+			break;
+		case TURRTLE:
+			turtle();
+			break;
+		}
+		
+	}
+	
+	public void turtle(){
+		while(true){
+			defense();
+		}
+	}
+	
+	public void mongolian(){
 		while(true){
 			switch(state){
 			case DEFENDING:

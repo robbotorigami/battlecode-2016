@@ -12,6 +12,30 @@ public class Turret extends BaseRobot {
 	@Override
 	public void run() {
 		while(true){
+			for(Signal Message: rc.emptySignalQueue()){
+				if(Message.getMessage() != null){
+					if(ComSystem.getFlag(Message) == 0x42){
+						rc.setIndicatorString(0, "Pack it up boys");
+						try {
+							rc.pack();
+						} catch (GameActionException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						TTM Temp = new TTM(rc);
+						Temp.run_ret(Message.getLocation());
+					}
+					break;
+				}
+			}
+			/*
+			for(RobotInfo stuff : rc.senseNearbyRobots(2, rc.getTeam())){
+				if(stuff.type == RobotType.TTM){
+					TTM Temp = new TTM(rc);
+					Temp.run_ret();
+					break;
+				}
+			}*/
 			try {
 				destroy();
 			} catch (GameActionException e) {
