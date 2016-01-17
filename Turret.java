@@ -12,6 +12,7 @@ public class Turret extends BaseRobot {
 	@Override
 	public void run() {
 		while(true){
+			rc.setIndicatorString(0,  "");
 			for(Signal Message: rc.emptySignalQueue()){
 				if(Message.getMessage() != null){
 					if(ComSystem.getFlag(Message) == 0x42){

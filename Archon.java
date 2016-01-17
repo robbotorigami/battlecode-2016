@@ -13,6 +13,8 @@ public class Archon extends BaseRobot {
 	public double GuardSpawnProp = 0.0;
 	public double TurretSpawnProp = 0.2;
 	
+	public double signalRange = 1;
+	
 	public MapLocation bossArchon;
 	
 	
@@ -81,11 +83,14 @@ public class Archon extends BaseRobot {
 		}
 		if(overCrowded){
 			try {
-				rc.broadcastMessageSignal(0x42, 0, 2);
+				rc.broadcastMessageSignal(0x42, 0, (int) signalRange);
+				signalRange += 0.05;
 			} catch (GameActionException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+		}else{
+			signalRange = 1;
 		}
 	}
 	

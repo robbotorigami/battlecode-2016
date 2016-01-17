@@ -52,6 +52,9 @@ public class TTM extends BaseRobot {
 		}
 		try {
 			rc.unpack();
+			rc.emptySignalQueue();
+			for(int i = 0; i < 10; i++)
+				Clock.yield();
 		} catch (GameActionException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

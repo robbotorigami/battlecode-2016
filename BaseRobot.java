@@ -494,7 +494,7 @@ public abstract class BaseRobot {
 		for(MapLocation archon : ourArchons){
 			boolean anyOneWithinSix = false;
 			for(MapLocation friend : ourArchons){
-				if(!friend.equals(archon) && friend.distanceSquaredTo(archon) <= 20*20){
+				if(!friend.equals(archon) && friend.distanceSquaredTo(archon) <= 10*10){
 					anyOneWithinSix = true;
 					break;
 				}
