@@ -8,6 +8,8 @@ public class Turret extends BaseRobot {
 		super(rcin);
 		// TODO Auto-generated constructor stub
 	}
+	
+	//Note: if spawned as a turret, then our strategy is turrtling
 
 	@Override
 	public void run() {
@@ -45,6 +47,10 @@ public class Turret extends BaseRobot {
 			Clock.yield();
 		}
 
+	}
+	
+	public void destroyTheDen(){
+		
 	}
 
 }

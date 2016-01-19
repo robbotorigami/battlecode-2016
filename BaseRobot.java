@@ -3,6 +3,7 @@ package team022;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Random;
 import battlecode.common.*;
 import team022.Guard.GuardState;
@@ -24,7 +25,7 @@ public abstract class BaseRobot {
 	public MetaStrategy lifePlan;
 	
 	public enum MetaStrategy{
-		TURRTLE, MONGOLS;
+		TURRTLE, MONGOLS, GETEM;
 	};
 	
 	
@@ -489,26 +490,65 @@ public abstract class BaseRobot {
 	}
 	
 	public void setMetaStrategy(){
-		MapLocation[] ourArchons = rc.getInitialArchonLocations(rc.getTeam());
-		boolean allWithinSix = true;
-		for(MapLocation archon : ourArchons){
-			boolean anyOneWithinSix = false;
-			for(MapLocation friend : ourArchons){
-				if(!friend.equals(archon) && friend.distanceSquaredTo(archon) <= 10*10){
-					anyOneWithinSix = true;
-					break;
-				}
-			}
-			if(!anyOneWithinSix){
-				allWithinSix = false;
-				break;
-			}
+		int size = getApproxSize();
+		if(doTheZombiesEvenLift()){
+			lifePlan = MetaStrategy.MONGOLS;
+			return;
 		}
-		if(allWithinSix || ourArchons.length == 1){
+		if(size >= 2500){
 			lifePlan = MetaStrategy.TURRTLE;			
 		}else{
 			lifePlan = MetaStrategy.MONGOLS;
 		}
 		
+	}
+	
+	public int getApproxSize(){
+		MapLocation[] archons1 = rc.getInitialArchonLocations(rc.getTeam());
+		MapLocation[] archons2 = rc.getInitialArchonLocations(rc.getTeam().opponent());
+		
+	    MapLocation[] archons= new MapLocation[archons1.length + archons2.length];
+	    System.arraycopy(archons1, 0, archons, 0, archons1.length);
+	    System.arraycopy(archons2, 0, archons, archons1.length, archons2.length);
+		MapLocation upperLeft = archons[0];
+		MapLocation lowerRight = archons[0];
+		
+		for(MapLocation archon : archons){
+			if(archon.x < upperLeft.x)
+				upperLeft = new MapLocation(archon.x, upperLeft.y);
+			if(archon.y < upperLeft.y)
+				upperLeft = new MapLocation(upperLeft.x, archon.y);
+			
+			if(archon.x > lowerRight.x)
+				lowerRight = new MapLocation(archon.x, lowerRight.y);
+			if(archon.y > lowerRight.y)
+				lowerRight = new MapLocation(lowerRight.x, archon.y);
+		}
+		if(upperLeft != null && lowerRight != null)
+			return upperLeft.distanceSquaredTo(lowerRight);
+		return 0;
+	}
+	
+	public boolean doTheZombiesEvenLift(){
+		ZombieSpawnSchedule theSchedule = rc.getZombieSpawnSchedule();
+		HashMap<RobotType, Integer> howBad = new HashMap<>();
+		RobotType[] zombles = {RobotType.BIGZOMBIE,
+				RobotType.FASTZOMBIE,
+				RobotType.RANGEDZOMBIE,
+				RobotType.STANDARDZOMBIE};
+		for(RobotType zType : zombles){
+			howBad.put(zType, (int)(zType.maxHealth*zType.attackPower/zType.attackDelay));
+		}
+		
+		int howBadIsIt = 0;
+		for(int round : theSchedule.getRounds()){
+			for(ZombieCount z: theSchedule.getScheduleForRound(round)){
+				howBadIsIt += howBad.get(z.getType())* z.getCount();
+			}
+		}
+		if(howBadIsIt > 120000){
+			return true;
+		}
+		return false;
 	}
 }

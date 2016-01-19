@@ -11,6 +11,7 @@ public class TTM extends BaseRobot {
 		// TODO Auto-generated constructor stub
 	}
 
+	//Note: If we are spawned as a TTM, then our strategy is Mongols
 	@Override
 	public void run() {
 		while(true){
